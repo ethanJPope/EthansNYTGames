@@ -1,16 +1,14 @@
 using UnityEngine;
 
-public class Window : MonoBehaviour
+public class Window : MonoBehaviour, IWindow
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public void Show()
     {
-        
+        gameObject.SetActive(true);
     }
 
-    // Update is called once per frame
-    void Update()
+    public void Hide()
     {
-        
+        gameObject.SetActive(false);
     }
 }
