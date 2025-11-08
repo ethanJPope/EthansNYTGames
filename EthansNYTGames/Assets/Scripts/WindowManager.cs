@@ -20,6 +20,10 @@ public class WindowManager : MonoBehaviour
     private void Start()
     {
         currentWindow = startingWindow;
+        if (currentWindow != null)
+        {
+            currentWindow.Show();
+        }
     }
 
     public void OpenWindow(Window window)

@@ -1,5 +1,6 @@
 {
     "files.exclude": {
+        "chatgpt.preferWsl": true,
         "**/.DS_Store": true,
         "**/.git": true,
         "**/.vs": true,

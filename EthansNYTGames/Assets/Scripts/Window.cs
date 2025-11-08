@@ -2,12 +2,12 @@ using UnityEngine;
 
 public class Window : MonoBehaviour, IWindow
 {
-    public void Show()
+    public virtual void Show()
     {
         gameObject.SetActive(true);
     }
 
-    public void Hide()
+    public virtual void Hide()
     {
         gameObject.SetActive(false);
     }
