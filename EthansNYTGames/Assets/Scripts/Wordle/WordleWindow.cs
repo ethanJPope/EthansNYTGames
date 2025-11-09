@@ -1,15 +1,15 @@
 using UnityEngine;
 using TMPro;
-//using System;
+using System.Collections;
 
 public class WordleWindow : Window
 {
     [SerializeField] private Tile[] tiles;
+    [SerializeField] private Toast toast;
     private const int WordLength = 5;
     private int currentIndex = 0;
     private string currentGuess = "";
     private int guessRow = 0;
-
     private string answer = "";
     private bool gameOver = false;
 
@@ -92,11 +92,20 @@ public class WordleWindow : Window
     {
         if (currentGuess.Length != WordLength)
         {
+            if(toast != null)
+            {
+                toast.ShowToast("Not enough letters");
+            }
+            StartCoroutine(ShakeRow(guessRow));
             return;
         }
         if (!WordBank.IsValid(currentGuess))
         {
-            Debug.Log("WordleWindow: Invalid word guessed: " + currentGuess);
+            if (toast != null)
+            {
+                toast.ShowToast("Not in word list");
+            }
+            StartCoroutine(ShakeRow(guessRow));
             return;
         }
 
@@ -117,6 +126,39 @@ public class WordleWindow : Window
             return;
         }
         currentIndex = nextIndex;
+    }
+
+    private IEnumerator ShakeRow(int row, float duration = 0.25f, float strength = 15f, float freq = 40f)
+    {
+        int rowStart = row * WordLength;
+        int rowEnd = rowStart + WordLength;
+
+        int count = rowEnd - rowStart;
+        var rts = new RectTransform[count];
+        var start = new Vector2[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            rts[i] = tiles[rowStart + i].GetComponent<RectTransform>();
+            start[i] = rts[i].anchoredPosition;
+        }
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float damper = 1f - Mathf.Clamp01(t / duration);
+            float offset = Mathf.Sin(t * freq) * strength * damper;
+            for (int i = 0; i < count; i++)
+            {
+                rts[i].anchoredPosition = start[i] + new Vector2(offset, 0f);
+            }
+            yield return null;
+        }
+        for (int i = 0; i < count; i++)
+        {
+            rts[i].anchoredPosition = start[i];
+        }
     }
 
     private void CheckColorCurrentRow()
@@ -168,7 +210,7 @@ public class WordleWindow : Window
         {
             tiles[rowStart + i].SetState(states[i]);
         }
-        
+
     }
     private void ClearBoard()
     {
