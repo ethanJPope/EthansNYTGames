@@ -1,17 +1,21 @@
 using UnityEngine;
 using TMPro;
 using System.Collections;
+using Unity.VisualScripting.FullSerializer;
+using System;
 
 public class WordleWindow : Window
 {
     [SerializeField] private Tile[] tiles;
     [SerializeField] private Toast toast;
+    [SerializeField] private GameObject playAgainButton;
     private const int WordLength = 5;
     private int currentIndex = 0;
     private string currentGuess = "";
     private int guessRow = 0;
     private string answer = "";
     private bool gameOver = false;
+    private bool showedAnswer = false;
 
     public override void Show()
     {
@@ -41,10 +45,20 @@ public class WordleWindow : Window
 
     private void Update()
     {
-        if (!gameObject.activeInHierarchy || gameOver)
+        if (!showedAnswer)
         {
-            return;
+            Debug.Log("Current Answer: " + answer);
+            showedAnswer = true;
         }
+        if (gameOver)
+        {
+            playAgainButton.SetActive(true);
+        }
+        else
+        {
+            playAgainButton.SetActive(false);
+        }
+
         foreach (char c in Input.inputString)
         {
             if (char.IsLetter(c))
@@ -92,20 +106,20 @@ public class WordleWindow : Window
     {
         if (currentGuess.Length != WordLength)
         {
-            if(toast != null)
+            StartCoroutine(ShakeRow(guessRow));
+            if (toast != null)
             {
                 toast.ShowToast("Not enough letters");
             }
-            StartCoroutine(ShakeRow(guessRow));
             return;
         }
         if (!WordBank.IsValid(currentGuess))
         {
+            StartCoroutine(ShakeRow(guessRow));
             if (toast != null)
             {
                 toast.ShowToast("Not in word list");
             }
-            StartCoroutine(ShakeRow(guessRow));
             return;
         }
 
@@ -123,6 +137,8 @@ public class WordleWindow : Window
         if (nextIndex >= tiles.Length)
         {
             gameOver = true;
+            Debug.Log("Game Over! The correct word was: " + answer);
+            toast.ShowToast(answer, Mathf.Infinity);
             return;
         }
         currentIndex = nextIndex;
@@ -136,28 +152,31 @@ public class WordleWindow : Window
         int count = rowEnd - rowStart;
         var rts = new RectTransform[count];
         var start = new Vector2[count];
-
-        for (int i = 0; i < count; i++)
+        if (!toast.isShowing)
         {
-            rts[i] = tiles[rowStart + i].GetComponent<RectTransform>();
-            start[i] = rts[i].anchoredPosition;
-        }
-
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-            float damper = 1f - Mathf.Clamp01(t / duration);
-            float offset = Mathf.Sin(t * freq) * strength * damper;
             for (int i = 0; i < count; i++)
             {
-                rts[i].anchoredPosition = start[i] + new Vector2(offset, 0f);
+                rts[i] = tiles[rowStart + i].GetComponent<RectTransform>();
+                start[i] = rts[i].anchoredPosition;
             }
-            yield return null;
-        }
-        for (int i = 0; i < count; i++)
-        {
-            rts[i].anchoredPosition = start[i];
+
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                float damper = 1f - Mathf.Clamp01(t / duration);
+                float offset = Mathf.Sin(t * freq) * strength * damper;
+                for (int i = 0; i < count; i++)
+                {
+                    rts[i].anchoredPosition = start[i] + new Vector2(offset, 0f);
+                }
+                yield return null;
+            }
+            for (int i = 0; i < count; i++)
+            {
+                rts[i].anchoredPosition = start[i];
+            }
+
         }
     }
 
@@ -212,11 +231,19 @@ public class WordleWindow : Window
         }
 
     }
-    private void ClearBoard()
+    public void ClearBoard()
     {
         for (int i = 0; i < tiles.Length; i++)
         {
             tiles[i].SetLetter(' ');
+            tiles[i].SetState(TileState.Default);
         }
+        currentIndex = 0;
+        guessRow = 0;
+        currentGuess = "";
+        gameOver = false;
+        WordBank.LoadIfNeeded();
+        answer = WordBank.GetRandomAnswer();
+        Debug.Log("New Answer: " + answer);
     }
 }

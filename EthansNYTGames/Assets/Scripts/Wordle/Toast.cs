@@ -10,6 +10,7 @@ public class Toast : MonoBehaviour
     [SerializeField] private float displayTime = 1.2f;
     [SerializeField] private float fadeOut = 0.2f;
 
+    public bool isShowing = false;
     private Coroutine routine;
 
     private void Awake()
@@ -25,15 +26,14 @@ public class Toast : MonoBehaviour
     }
     public void ShowToast(string message, float? holdOverride = null)
     {
-        if (routine != null)
-        {
-            StopCoroutine(routine);
-        }
+        if (isShowing) return;
+        isShowing = true;
         routine = StartCoroutine(Run(message, holdOverride ?? displayTime));
     }
 
     private IEnumerator Run(string message, float holdTime)
     {
+        isShowing = true;
         if (label != null)
         {
             label.text = message;
@@ -74,5 +74,6 @@ public class Toast : MonoBehaviour
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
         routine = null;
+        isShowing = false;
     }
 }
